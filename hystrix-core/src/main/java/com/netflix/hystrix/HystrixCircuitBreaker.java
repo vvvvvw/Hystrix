@@ -38,6 +38,7 @@ public interface HystrixCircuitBreaker {
      * 
      * @return boolean whether a request should be permitted
      */
+    //幂等操作每个Hystrix命令的请求都通过它来判断是否可以被执行，包括半开逻辑
     boolean allowRequest();
 
     /**
@@ -45,18 +46,22 @@ public interface HystrixCircuitBreaker {
      * 
      * @return boolean state of circuit breaker
      */
+    //返回当前断路器是否打开
     boolean isOpen();
 
     /**
      * Invoked on successful executions from {@link HystrixCommand} as part of feedback mechanism when in a half-open state.
      */
+    //在{@link HystrixCommand}成功执行时调用，作为半开状态下的反馈机制的一部分。
     void markSuccess();
 
     /**
      * Invoked on unsuccessful executions from {@link HystrixCommand} as part of feedback mechanism when in a half-open state.
      */
+    //作为处于半开状态的反馈机制的一部分，从{@link HystrixCommand}执行失败时调用
     void markNonSuccess();
 
+    //在命令执行开始时调用以尝试执行。 这是非幂等的 - 它可能会修改内部状态。
     /**
      * Invoked at start of command execution to attempt an execution.  This is non-idempotent - it may modify internal
      * state.
@@ -68,6 +73,7 @@ public interface HystrixCircuitBreaker {
      * @ThreadSafe
      */
     class Factory {
+        //Map<HystrixCommandKey.name(), HystrixCircuitBreaker>
         // String is HystrixCommandKey.name() (we can't use HystrixCommandKey directly as we can't guarantee it implements hashcode/equals correctly)
         private static ConcurrentHashMap<String, HystrixCircuitBreaker> circuitBreakersByCommand = new ConcurrentHashMap<String, HystrixCircuitBreaker>();
 
@@ -129,6 +135,7 @@ public interface HystrixCircuitBreaker {
     }
 
 
+    ////断路器具体实现
     /**
      * The default production implementation of {@link HystrixCircuitBreaker}.
      * 
@@ -136,14 +143,18 @@ public interface HystrixCircuitBreaker {
      * @ThreadSafe
      */
     /* package */class HystrixCircuitBreakerImpl implements HystrixCircuitBreaker {
+        //断路器对应的 HystrixCommand 实例的属性对象
         private final HystrixCommandProperties properties;
+        //用来让HystrixCommand记录各类度量指标的对象
         private final HystrixCommandMetrics metrics;
 
         enum Status {
             CLOSED, OPEN, HALF_OPEN;
         }
 
+        //当前断路器是否打开的标识，默认false
         private final AtomicReference<Status> status = new AtomicReference<Status>(Status.CLOSED);
+        //断路器打开的时间戳，如果为-1，表示断路器关闭
         private final AtomicLong circuitOpened = new AtomicLong(-1);
         private final AtomicReference<Subscription> activeSubscription = new AtomicReference<Subscription>(null);
 
@@ -225,9 +236,11 @@ public interface HystrixCircuitBreaker {
 
         @Override
         public boolean isOpen() {
+            //设置强制打开断路器
             if (properties.circuitBreakerForceOpen().get()) {
                 return true;
             }
+            //设置强制关闭断路器
             if (properties.circuitBreakerForceClosed().get()) {
                 return false;
             }
@@ -288,6 +301,7 @@ public interface HystrixCircuitBreaker {
         }
     }
 
+    ////没有任何操作的断路器实现
     /**
      * An implementation of the circuit breaker that does nothing.
      * 
