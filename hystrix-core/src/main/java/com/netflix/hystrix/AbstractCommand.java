@@ -475,6 +475,7 @@ import java.util.concurrent.atomic.AtomicReference;
                 final String cacheKey = getCacheKey();
 
                 /* try from cache first */
+                //命中
                 if (requestCacheEnabled) {
                     HystrixCommandResponseFromCache<R> fromCache = (HystrixCommandResponseFromCache<R>) requestCache.get(cacheKey);
                     if (fromCache != null) {
@@ -484,6 +485,7 @@ import java.util.concurrent.atomic.AtomicReference;
                 }
 
                 Observable<R> hystrixObservable =
+                        //真实执行的 命令
                         Observable.defer(applyHystrixSemantics)
                                 .map(wrapWithAllOnNextHooks);
 
@@ -492,12 +494,15 @@ import java.util.concurrent.atomic.AtomicReference;
                 // put in cache
                 if (requestCacheEnabled && cacheKey != null) {
                     // wrap it for caching
+                    //存入cache
                     HystrixCachedObservable<R> toCache = HystrixCachedObservable.from(hystrixObservable, _cmd);
                     HystrixCommandResponseFromCache<R> fromCache = (HystrixCommandResponseFromCache<R>) requestCache.putIfAbsent(cacheKey, toCache);
+                    //如果已经有其他线程
                     if (fromCache != null) {
                         // another thread beat us so we'll use the cached value instead
                         toCache.unsubscribe();
                         isResponseFromCache = true;
+                        //使用缓存中返回的数据
                         return handleRequestCacheHitAndEmitValues(fromCache, _cmd);
                     } else {
                         // we just created an ObservableCommand so we cast and return it
@@ -515,6 +520,7 @@ import java.util.concurrent.atomic.AtomicReference;
         });
     }
 
+    //真实的hystrix命令
     private Observable<R> applyHystrixSemantics(final AbstractCommand<R> _cmd) {
         // mark that we're starting execution on the ExecutionHook
         // if this hook throws an exception, then a fast-fail occurs with no fallback.  No state is left inconsistent
@@ -539,7 +545,7 @@ import java.util.concurrent.atomic.AtomicReference;
                     eventNotifier.markEvent(HystrixEventType.EXCEPTION_THROWN, commandKey);
                 }
             };
-
+            //信号量不排队，直接tryacquire
             if (executionSemaphore.tryAcquire()) {
                 try {
                     /* used to track userThreadExecutionTime */
@@ -647,6 +653,7 @@ import java.util.concurrent.atomic.AtomicReference;
     }
 
     private Observable<R> executeCommandWithSpecifiedIsolation(final AbstractCommand<R> _cmd) {
+        //如果 隔离方式为 thread，外面的信号量方式返回的就是 TryableSemaphoreNoOp，会直接通过
         if (properties.executionIsolationStrategy().get() == ExecutionIsolationStrategy.THREAD) {
             // mark that we are executing in a thread (even if we end up being rejected we still were a THREAD execution and not SEMAPHORE)
             return Observable.defer(new Func0<Observable<R>>() {
@@ -1723,6 +1730,7 @@ import java.util.concurrent.atomic.AtomicReference;
         return getCacheKey();
     }
 
+    //需要重写 getCacheKey方法返回非空值才能开启缓存
     protected boolean isRequestCachingEnabled() {
         return properties.requestCacheEnabled().get() && getCacheKey() != null;
     }

@@ -73,13 +73,16 @@ public class HystrixRequestContext implements Closeable {
      * HystrixRequestContext object with the ConcurrentHashMap within it nulled out since once it is nullified
      * from the parent thread it is shared across all child threads.
      */
+    // 利用ThreadLocal, 每个线程各有一份HystrixRequestContext,当然,前提是调用了initializeContext()进行初始化
     private static ThreadLocal<HystrixRequestContext> requestVariables = new ThreadLocal<HystrixRequestContext>();
 
+    // 创建一个HystrixRequestContext,并与当前线程关联
     public static boolean isCurrentThreadInitialized() {
         HystrixRequestContext context = requestVariables.get();
         return context != null && context.state != null;
     }
 
+    // 获取当前线程关联的HystrixRequestContext, 用的是ThreadLocal
     public static HystrixRequestContext getContextForCurrentThread() {
         HystrixRequestContext context = requestVariables.get();
         if (context != null && context.state != null) {
@@ -92,6 +95,7 @@ public class HystrixRequestContext implements Closeable {
         }
     }
 
+    // 为当前线程设置一个已存在的HystrixRequestContext
     public static void setContextOnCurrentThread(HystrixRequestContext state) {
         requestVariables.set(state);
     }
@@ -105,6 +109,7 @@ public class HystrixRequestContext implements Closeable {
      * <p>
      * See class header JavaDoc for example Servlet Filter implementation that initializes and shuts down the context.
      */
+    //初始化本线程的请求上下文
     public static HystrixRequestContext initializeContext() {
         HystrixRequestContext state = new HystrixRequestContext();
         requestVariables.set(state);
@@ -116,6 +121,10 @@ public class HystrixRequestContext implements Closeable {
      * 
      * Only HystrixRequestVariable has a reason to be accessing this field.
      */
+    //这是实际的存储结构，包括所有存储的数据，key就是HystrixRequestVariableDefault。
+    //因为存储HystrixRequestContext的对象是threadlocal的，
+    // requestVariables变量是每个线程关联一个HystrixRequestContext，获取数据的时候是从requestVariables中获取，
+    //因此是 每个线程不同的数据
     /* package */ConcurrentHashMap<HystrixRequestVariableDefault<?>, HystrixRequestVariableDefault.LazyInitializer<?>> state = new ConcurrentHashMap<HystrixRequestVariableDefault<?>, HystrixRequestVariableDefault.LazyInitializer<?>>();
 
     // instantiation should occur via static factory methods.

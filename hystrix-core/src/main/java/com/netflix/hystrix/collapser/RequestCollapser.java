@@ -80,9 +80,11 @@ public class RequestCollapser<BatchReturnType, ResponseType, RequestArgumentType
          */
         if (!timerListenerRegistered.get() && timerListenerRegistered.compareAndSet(false, true)) {
             /* schedule the collapsing task to be executed every x milliseconds (x defined inside CollapsedTask) */
+            //设置定时合并任务
             timerListenerReference.set(timer.addListener(new CollapsedTask()));
         }
 
+        //循环直到返回结果
         // loop until succeed (compare-and-set spin-loop)
         while (true) {
             final RequestBatch<BatchReturnType, ResponseType, RequestArgumentType> b = batch.get();
@@ -94,12 +96,15 @@ public class RequestCollapser<BatchReturnType, ResponseType, RequestArgumentType
             if (arg != null) {
                 response = b.offer(arg);
             } else {
+                //todo 如果为空，设置NULL_SENTINEL
                 response = b.offer( (RequestArgumentType) NULL_SENTINEL);
             }
             // it will always get an Observable unless we hit the max batch size
+            //除非 达到最大批量数，不然总是会返回 Observable
             if (response != null) {
                 return response;
             } else {
+                //如果 队列达到最大数量 则创建新队列
                 // this batch can't accept requests so create a new one and set it if another thread doesn't beat us
                 createNewBatchAndExecutePreviousIfNeeded(b);
             }
@@ -112,6 +117,7 @@ public class RequestCollapser<BatchReturnType, ResponseType, RequestArgumentType
         }
         if (batch.compareAndSet(previousBatch, new RequestBatch<BatchReturnType, ResponseType, RequestArgumentType>(properties, commandCollapser, properties.maxRequestsInBatch().get()))) {
             // this thread won so trigger the previous batch
+            //执行批量命令
             previousBatch.executeBatchIfNotAlreadyStarted();
         }
     }
@@ -143,6 +149,7 @@ public class RequestCollapser<BatchReturnType, ResponseType, RequestArgumentType
             callableWithContextOfParent = new HystrixContextCallable<Void>(concurrencyStrategy, new Callable<Void>() {
                 // the wrapCallable call allows a strategy to capture thread-context if desired
 
+                //定期执行
                 @Override
                 public Void call() throws Exception {
                     try {

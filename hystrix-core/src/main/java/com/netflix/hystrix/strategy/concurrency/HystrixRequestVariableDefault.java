@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
  * @ExcludeFromJavadoc
  * @ThreadSafe
  */
+//请求上下文变量，表示request level的属性
 public class HystrixRequestVariableDefault<T> implements HystrixRequestVariable<T> {
     static final Logger logger = LoggerFactory.getLogger(HystrixRequestVariableDefault.class);
 
@@ -75,6 +76,7 @@ public class HystrixRequestVariableDefault<T> implements HystrixRequestVariable<
         if (HystrixRequestContext.getContextForCurrentThread() == null) {
             throw new IllegalStateException(HystrixRequestContext.class.getSimpleName() + ".initializeContext() must be called at the beginning of each request before RequestVariable functionality can be used.");
         }
+        // 拿到当前线程的存储结构, 以自己作为key, 来检索数据
         ConcurrentHashMap<HystrixRequestVariableDefault<?>, LazyInitializer<?>> variableMap = HystrixRequestContext.getContextForCurrentThread().state;
 
         // short-circuit the synchronized path below if we already have the value in the ConcurrentHashMap
@@ -132,6 +134,7 @@ public class HystrixRequestVariableDefault<T> implements HystrixRequestVariable<
      *            the value to set
      */
     public void set(T value) {
+        // 拿到当前线程的存储结构, 用自己作为key, 存储实际的数据。
         HystrixRequestContext.getContextForCurrentThread().state.put(this, new LazyInitializer<T>(this, value));
     }
 

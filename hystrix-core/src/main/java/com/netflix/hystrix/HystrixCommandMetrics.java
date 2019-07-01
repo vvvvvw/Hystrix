@@ -46,6 +46,7 @@ public class HystrixCommandMetrics extends HystrixMetrics {
 
     private static final HystrixEventType[] ALL_EVENT_TYPES = HystrixEventType.values();
 
+    //将事件聚合成桶
     public static final Func2<long[], HystrixCommandCompletion, long[]> appendEventToBucket = new Func2<long[], HystrixCommandCompletion, long[]>() {
         @Override
         public long[] call(long[] initialCountArray, HystrixCommandCompletion execution) {
@@ -397,6 +398,7 @@ public class HystrixCommandMetrics extends HystrixMetrics {
             this.totalCount = total;
             this.errorCount = error;
             if (totalCount > 0) {
+                //失败率，败事件的总数（包括请求失败、超时、线程池满、信号量满）
                 this.errorPercentage = (int) ((double) errorCount / totalCount * 100);
             } else {
                 this.errorPercentage = 0;
@@ -418,7 +420,9 @@ public class HystrixCommandMetrics extends HystrixMetrics {
         }
 
         public HealthCounts plus(long[] eventTypeCounts) {
+            // 之前的请求总数
             long updatedTotalCount = totalCount;
+            // 之前的失败个数
             long updatedErrorCount = errorCount;
 
             long successCount = eventTypeCounts[HystrixEventType.SUCCESS.ordinal()];
@@ -427,7 +431,9 @@ public class HystrixCommandMetrics extends HystrixMetrics {
             long threadPoolRejectedCount = eventTypeCounts[HystrixEventType.THREAD_POOL_REJECTED.ordinal()];
             long semaphoreRejectedCount = eventTypeCounts[HystrixEventType.SEMAPHORE_REJECTED.ordinal()];
 
+            // 加上所有事件的总数
             updatedTotalCount += (successCount + failureCount + timeoutCount + threadPoolRejectedCount + semaphoreRejectedCount);
+            // 加上失败事件的总数（包括请求失败、超时、线程池满、信号量满）
             updatedErrorCount += (failureCount + timeoutCount + threadPoolRejectedCount + semaphoreRejectedCount);
             return new HealthCounts(updatedTotalCount, updatedErrorCount);
         }

@@ -21,6 +21,7 @@ import rx.Observable;
  * Base interface for a stream of {@link com.netflix.hystrix.HystrixEventType}s.  Allows consumption by individual
  * {@link com.netflix.hystrix.HystrixEventType} or by time-based bucketing of events
  */
+//事件流接口
 public interface HystrixEventStream<E extends HystrixEvent> {
 
     Observable<E> observe();

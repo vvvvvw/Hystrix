@@ -12,6 +12,7 @@ public class HystrixCachedObservable<R> {
 
     protected HystrixCachedObservable(final Observable<R> originalObservable) {
         ReplaySubject<R> replaySubject = ReplaySubject.create();
+        //真实执行命令
         this.originalSubscription = originalObservable
                 .subscribe(replaySubject);
 

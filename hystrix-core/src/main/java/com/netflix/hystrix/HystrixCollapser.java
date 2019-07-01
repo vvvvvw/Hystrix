@@ -55,11 +55,11 @@ import java.util.concurrent.Future;
  * It must be stateless or else it will be non-deterministic because most instances are discarded while some are retained and become the
  * "collapsers" for all the ones that are discarded.
  * 
- * @param <BatchReturnType>
+ * @param <BatchReturnType> 合并后批量请求的返回类型
  *            The type returned from the {@link HystrixCommand} that will be invoked on batch executions.
- * @param <ResponseType>
+ * @param <ResponseType> 单个请求返回的类型
  *            The type returned from this command.
- * @param <RequestArgumentType>
+ * @param <RequestArgumentType> 请求参数类型
  *            The type of the request argument. If multiple arguments are needed, wrap them in another object or a Tuple.
  */
 public abstract class HystrixCollapser<BatchReturnType, ResponseType, RequestArgumentType> implements HystrixExecutable<ResponseType>, HystrixObservable<ResponseType> {
@@ -230,6 +230,7 @@ public abstract class HystrixCollapser<BatchReturnType, ResponseType, RequestArg
      * 
      * @return RequestArgumentType
      */
+    //获取请求参数
     public abstract RequestArgumentType getRequestArgument();
 
     /**
@@ -247,6 +248,7 @@ public abstract class HystrixCollapser<BatchReturnType, ResponseType, RequestArg
      *            {@code Collection<CollapsedRequest<ResponseType, RequestArgumentType>>} containing {@link CollapsedRequest} objects containing the arguments of each request collapsed in this batch.
      * @return {@link HystrixCommand}{@code <BatchReturnType>} which when executed will retrieve results for the batch of arguments as found in the Collection of {@link CollapsedRequest} objects
      */
+    //合并请求产生批量命令的具体实现方法
     protected abstract HystrixCommand<BatchReturnType> createCommand(Collection<CollapsedRequest<ResponseType, RequestArgumentType>> requests);
 
     /**
@@ -312,6 +314,7 @@ public abstract class HystrixCollapser<BatchReturnType, ResponseType, RequestArg
      *            <p>
      *            The {@link CollapsedRequest#setResponse(Object)} or {@link CollapsedRequest#setException(Exception)} must be called on each {@link CollapsedRequest} in the Collection.
      */
+    //批量命令返回后的处理，这里需要实现将批量结果拆分并传递给合并前的各个原子请求命令的逻辑
     protected abstract void mapResponseToRequests(BatchReturnType batchResponse, Collection<CollapsedRequest<ResponseType, RequestArgumentType>> requests);
 
     /**

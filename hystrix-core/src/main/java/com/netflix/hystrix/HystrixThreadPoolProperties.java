@@ -58,11 +58,15 @@ public abstract class HystrixThreadPoolProperties {
     static int default_threadPoolRollingNumberStatisticalWindow = 10000; // milliseconds for rolling number
     static int default_threadPoolRollingNumberStatisticalWindowBuckets = 10; // number of buckets in rolling number (10 1-second buckets)
 
+    //核心线程数大小
     private final HystrixProperty<Integer> corePoolSize;
     private final HystrixProperty<Integer> maximumPoolSize;
+    //核心线程数
     private final HystrixProperty<Integer> keepAliveTime;
+    //最大排队长度
     private final HystrixProperty<Integer> maxQueueSize;
     private final HystrixProperty<Integer> queueSizeRejectionThreshold;
+    //是否允许最大线程数和核心线程数不一致
     private final HystrixProperty<Boolean> allowMaximumSizeToDivergeFromCoreSize;
 
     private final HystrixProperty<Integer> threadPoolRollingNumberStatisticalWindowInMilliseconds;
@@ -86,7 +90,9 @@ public abstract class HystrixThreadPoolProperties {
         this.maximumPoolSize = getProperty(propertyPrefix, key, "maximumSize", builder.getMaximumSize(), default_maximumSize);
 
         this.keepAliveTime = getProperty(propertyPrefix, key, "keepAliveTimeMinutes", builder.getKeepAliveTimeMinutes(), default_keepAliveTimeMinutes);
+        //线程池队列长度
         this.maxQueueSize = getProperty(propertyPrefix, key, "maxQueueSize", builder.getMaxQueueSize(), default_maxQueueSize);
+        //线程池队列中最大排队长度
         this.queueSizeRejectionThreshold = getProperty(propertyPrefix, key, "queueSizeRejectionThreshold", builder.getQueueSizeRejectionThreshold(), default_queueSizeRejectionThreshold);
         this.threadPoolRollingNumberStatisticalWindowInMilliseconds = getProperty(propertyPrefix, key, "metrics.rollingStats.timeInMilliseconds", builder.getMetricsRollingStatisticalWindowInMilliseconds(), default_threadPoolRollingNumberStatisticalWindow);
         this.threadPoolRollingNumberStatisticalWindowBuckets = getProperty(propertyPrefix, key, "metrics.rollingStats.numBuckets", builder.getMetricsRollingStatisticalWindowBuckets(), default_threadPoolRollingNumberStatisticalWindowBuckets);

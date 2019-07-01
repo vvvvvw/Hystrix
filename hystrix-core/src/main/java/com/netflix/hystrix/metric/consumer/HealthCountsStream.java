@@ -38,12 +38,16 @@ import java.util.concurrent.ConcurrentMap;
  *
  * These values get produced and cached in this class.  This value (the latest observed value) may be queried using {@link #getLatest()}.
  */
-public class HealthCountsStream extends BucketedRollingCounterStream<HystrixCommandCompletion, long[], HystrixCommandMetrics.HealthCounts> {
+//Hystrix 熔断器依赖的记录调用情况统计
+public class HealthCountsStream extends BucketedRollingCounterStream</*代表命令执行完成。可以从中获取执行结果，并从中提取所有产生的事件（HystrixEventType）*/HystrixCommandCompletion,
+        /* 桶的类型为 long[]，里面统计了各种事件的个数。其中 index 为事件类型枚举对应的索引（ordinal），值为对应事件的个数*/long[],
+        /*里面统计了总的执行次数、失败次数以及失败百分比，供熔断器使用*/HystrixCommandMetrics.HealthCounts> {
 
     private static final ConcurrentMap<String, HealthCountsStream> streams = new ConcurrentHashMap<String, HealthCountsStream>();
 
     private static final int NUM_EVENT_TYPES = HystrixEventType.values().length;
 
+    //将每个窗口聚合成最终的统计数据
     private static final Func2<HystrixCommandMetrics.HealthCounts, long[], HystrixCommandMetrics.HealthCounts> healthCheckAccumulator = new Func2<HystrixCommandMetrics.HealthCounts, long[], HystrixCommandMetrics.HealthCounts>() {
         @Override
         public HystrixCommandMetrics.HealthCounts call(HystrixCommandMetrics.HealthCounts healthCounts, long[] bucketEventCounts) {
@@ -72,6 +76,7 @@ public class HealthCountsStream extends BucketedRollingCounterStream<HystrixComm
                 HealthCountsStream existingStream = streams.get(commandKey.name());
                 if (existingStream == null) {
                     HealthCountsStream newStream = new HealthCountsStream(commandKey, numBuckets, bucketSizeInMs,
+                            //将事件聚合成桶
                             HystrixCommandMetrics.appendEventToBucket);
 
                     streams.putIfAbsent(commandKey.name(), newStream);
@@ -95,7 +100,7 @@ public class HealthCountsStream extends BucketedRollingCounterStream<HystrixComm
 
     private HealthCountsStream(final HystrixCommandKey commandKey, final int numBuckets, final int bucketSizeInMs,
                                Func2<long[], HystrixCommandCompletion, long[]> reduceCommandCompletion) {
-        super(HystrixCommandCompletionStream.getInstance(commandKey), numBuckets, bucketSizeInMs, reduceCommandCompletion, healthCheckAccumulator);
+        super(/*原始数据流*/HystrixCommandCompletionStream.getInstance(commandKey), numBuckets, bucketSizeInMs, /*//将事件聚合成桶*/reduceCommandCompletion, /*//将桶聚合成输出对象*/ healthCheckAccumulator);
     }
 
     @Override

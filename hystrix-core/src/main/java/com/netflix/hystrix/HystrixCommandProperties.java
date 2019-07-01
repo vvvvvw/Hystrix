@@ -337,7 +337,7 @@ public abstract class HystrixCommandProperties {
      * Time in milliseconds to wait between allowing health snapshots to be taken that calculate success and error percentages and affect {@link HystrixCircuitBreaker#isOpen()} status.
      * <p>
      * On high-volume circuits the continual calculation of error percentage can become CPU intensive thus this controls how often it is calculated.
-     * 
+     *  每个滑动窗口的大小
      * @return {@code HystrixProperty<Integer>}
      */
     public HystrixProperty<Integer> metricsHealthSnapshotIntervalInMilliseconds() {
@@ -392,7 +392,7 @@ public abstract class HystrixCommandProperties {
 
     /**
      * Duration of statistical rolling window in milliseconds. This is passed into {@link HystrixRollingNumber} inside {@link HystrixCommandMetrics}.
-     * 
+     * 滑动窗口整个大小
      * @return {@code HystrixProperty<Integer>}
      */
     public HystrixProperty<Integer> metricsRollingStatisticalWindowInMilliseconds() {
@@ -468,7 +468,7 @@ public abstract class HystrixCommandProperties {
                 overrideValue = builderOverrideValue.name();
             }
             property = forString()
-                    .add(propertyPrefix + ".command." + key.name() + "." + instanceProperty, overrideValue)
+                    .add(, + ".command." + key.name() + "." + instanceProperty, overrideValue)
                     .add(propertyPrefix + ".command.default." + instanceProperty, defaultValue.name())
                     .build();
 

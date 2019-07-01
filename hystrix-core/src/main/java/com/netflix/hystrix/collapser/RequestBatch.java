@@ -61,6 +61,7 @@ public class RequestBatch<BatchReturnType, ResponseType, RequestArgumentType> {
     /**
      * @return Observable if offer accepted, null if batch is full, already started or completed
      */
+    //设置请求 到等待队列，如果 满了返回null
     public Observable<ResponseType> offer(RequestArgumentType arg) {
         /* short-cut - if the batch is started we reject the offer */
         if (batchStarted.get()) {
@@ -77,6 +78,7 @@ public class RequestBatch<BatchReturnType, ResponseType, RequestArgumentType> {
                     return null;
                 }
 
+                //如果超出了 最大请求数
                 if (argumentMap.size() >= maxBatchSize) {
                     return null;
                 } else {
@@ -153,6 +155,7 @@ public class RequestBatch<BatchReturnType, ResponseType, RequestArgumentType> {
      * </ul>
      * 
      */
+    //真实执行批量命令:1.创建批量 请求2.接收到 请求结果以后将结果 分别设置到 单个请求中
     public void executeBatchIfNotAlreadyStarted() {
         /*
          * - check that we only execute once since there's multiple paths to do so (timer, waiting thread or max batch size hit)

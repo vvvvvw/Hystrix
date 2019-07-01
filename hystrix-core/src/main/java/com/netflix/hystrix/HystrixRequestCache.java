@@ -219,6 +219,7 @@ public class HystrixRequestCache {
     }
 
     private static class RequestCacheKey {
+        //用来区分是 Command还是 请求合并器的缓存
         private final short type; // used to differentiate between Collapser/Command if key is same between them
         private final String key;
         private final HystrixConcurrencyStrategy concurrencyStrategy;

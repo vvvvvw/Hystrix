@@ -57,6 +57,7 @@ public class HystrixThreadEventStream {
     private final String threadName;
 
     private final Subject<HystrixCommandExecutionStarted, HystrixCommandExecutionStarted> writeOnlyCommandStartSubject;
+    //HystrixCommandCompletion事件写入
     private final Subject<HystrixCommandCompletion, HystrixCommandCompletion> writeOnlyCommandCompletionSubject;
     private final Subject<HystrixCollapserEvent, HystrixCollapserEvent> writeOnlyCollapserSubject;
 
@@ -105,6 +106,7 @@ public class HystrixThreadEventStream {
         this.threadId = thread.getId();
         this.threadName = thread.getName();
         writeOnlyCommandStartSubject = PublishSubject.create();
+        //提供额外的流量控制机制（onBackpressureBuffer），消费者太慢时这里会积压。
         writeOnlyCommandCompletionSubject = PublishSubject.create();
         writeOnlyCollapserSubject = PublishSubject.create();
 
@@ -124,6 +126,7 @@ public class HystrixThreadEventStream {
                 .unsafeSubscribe(Subscribers.empty());
     }
 
+    //通过 ThreadLocal 为每个不同的线程都创建了不同的 HystrixThreadEventStream
     public static HystrixThreadEventStream getInstance() {
         return threadLocalStreams.get();
     }
@@ -140,6 +143,7 @@ public class HystrixThreadEventStream {
         writeOnlyCommandStartSubject.onNext(event);
     }
 
+    // 执行完毕/异常/超时都会调用此方法
     public void executionDone(ExecutionResult executionResult, HystrixCommandKey commandKey, HystrixThreadPoolKey threadPoolKey) {
         HystrixCommandCompletion event = HystrixCommandCompletion.from(executionResult, commandKey, threadPoolKey);
         writeOnlyCommandCompletionSubject.onNext(event);

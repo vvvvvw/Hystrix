@@ -36,6 +36,7 @@ public class HystrixCommandCompletionStream implements HystrixEventStream<Hystri
 
     private static final ConcurrentMap<String, HystrixCommandCompletionStream> streams = new ConcurrentHashMap<String, HystrixCommandCompletionStream>();
 
+    //若对应的 CommandKey 的事件流已创建就从缓存中取出，否则就新创建并缓存起来，保证每个 CommandKey 只有一个实例
     public static HystrixCommandCompletionStream getInstance(HystrixCommandKey commandKey) {
         HystrixCommandCompletionStream initialStream = streams.get(commandKey.name());
         if (initialStream != null) {
@@ -65,6 +66,13 @@ public class HystrixCommandCompletionStream implements HystrixEventStream<Hystri
         streams.clear();
     }
 
+    /*
+    write 方法里通过向某个 Subject 发布事件来实现了发布的逻辑，那么 Subject 又是什么呢？
+    简单来说，Subject 就像是一个桥梁，既可以作为发布者 Observable，
+    又可以作为订阅者 Observer。它可以作为发布者和订阅者之间的一个“代理”，
+    提供额外的功能（如流量控制、缓存等）。这里的 writeOnlySubject 是经过 SerializedSubject 封装的 PublishSubject。PublishSubject 可以看做 hot observable。为了保证调用的顺序（根据 The Observable Contract，每个事件的产生需要满足顺序上的偏序关系，即使是在不同线程产生），
+    需要用 SerializedSubject 封装一层来保证事件真正地串行地产生
+     */
     public void write(HystrixCommandCompletion event) {
         writeOnlySubject.onNext(event);
     }
